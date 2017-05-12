@@ -4,6 +4,8 @@
 
 from __future__ import print_function
 
+import json
+import time
 import os
 import mimetypes
 
@@ -216,9 +218,14 @@ class API(object):
         """ :reference https://dev.twitter.com/rest/reference/post/media/upload-chunked
             :allowed_param:
         """
+
+        max_file_size = 524288
+        chunk_size = 2097152
         f = kwargs.pop('file', None)
-        # Initialize upload (Twitter cannot handle videos > 15 MB)
-        headers, post_data, fp = API._chunk_video('init', filename, 15360, form_field='media', f=f)
+        # Larger files are allowed to be uploaded asynchronously.
+        headers, post_data, fp = API._chunk_video('init', filename,
+                                                  max_file_size,
+                                                  form_field='media', f=f)
         kwargs.update({ 'headers': headers, 'post_data': post_data })
 
         # Send the INIT request
@@ -234,12 +241,20 @@ class API(object):
 
         # If a media ID has been generated, we can send the file
         if media_info.media_id:
-            chunk_size = kwargs.pop('chunk_size', 4096)
+            chunk_size = kwargs.pop('chunk_size', chunk_size)
             fsize = os.path.getsize(filename)
-            nloops = int(fsize / chunk_size) + (1 if fsize % chunk_size > 0 else 0)
+            nloops = int(fsize / chunk_size) + \
+                     (1 if fsize % chunk_size > 0 else 0)
             for i in range(nloops):
-                headers, post_data, fp = API._chunk_video('append', filename, 15360, chunk_size=chunk_size, f=fp, media_id=media_info.media_id, segment_index=i)
-                kwargs.update({ 'headers': headers, 'post_data': post_data, 'parser': RawParser() })
+                headers, post_data, fp = API._chunk_video(
+                    'append', filename, max_file_size, chunk_size=chunk_size,
+                    f=fp, media_id=media_info.media_id, segment_index=i
+                )
+                kwargs.update({
+                    'headers': headers,
+                    'post_data': post_data,
+                    'parser': RawParser()
+                })
                 # The APPEND command returns an empty response body
                 bind_api(
                     api=self,
@@ -251,10 +266,16 @@ class API(object):
                     upload_api=True
                 )(*args, **kwargs)
             # When all chunks have been sent, we can finalize.
-            headers, post_data, fp = API._chunk_video('finalize', filename, 15360, media_id=media_info.media_id)
-            kwargs.update({ 'headers': headers, 'post_data': post_data })
+            headers, post_data, fp = API._chunk_video('finalize', filename,
+                                                      max_file_size,
+                                                      media_id=
+                                                      media_info.media_id)
+            kwargs.update({
+                'headers': headers,
+                'post_data': post_data
+            })
             # The FINALIZE command returns media information
-            return bind_api(
+            response = bind_api(
                 api=self,
                 path='/media/upload.json',
                 method='POST',
@@ -263,6 +284,30 @@ class API(object):
                 require_auth=True,
                 upload_api=True
             )(*args, **kwargs)
+
+            twitter_result = json.loads(response)
+            if twitter_result['processing_info']['state'] == 'pending':
+                check_after = twitter_result[
+                    'processing_info']['check_after_secs']
+                time.sleep(check_after)
+
+                # STATUS method to get the id when media is processed
+                video_count = 0
+                while True:
+                    response = self.get_state_media(command='STATUS',
+                                                    media_id=media_info.media_id)
+
+                    if response['processing_info'][
+                        'state'] != 'succeeded' and video_count < 5:
+                        check_after = response[
+                            'processing_info']['check_after_secs']
+                        time.sleep(check_after)
+                        video_count += 1
+                    else:
+                        media_info = json.dumps(response)
+                        break
+
+            return media_info
         else:
             return media_info
 
@@ -361,6 +406,21 @@ class API(object):
             path='/statuses/oembed.json',
             payload_type='json',
             allowed_param=['id', 'url', 'maxwidth', 'hide_media', 'omit_script', 'align', 'related', 'lang']
+        )
+
+    @property
+    def get_state_media(self):
+        """ :reference: https://dev.twitter.com/rest/reference/get/statuses/oembed
+            :allowed_param:'command', 'media_id'
+        """
+        return bind_api(
+            api=self,
+            path='/media/upload.json',
+            method='GET',
+            payload_type='json',
+            allowed_param=['command', 'media_id'],
+            require_auth=True,
+            upload_api=True
         )
 
     def lookup_users(self, user_ids=None, screen_names=None, include_entities=None):
