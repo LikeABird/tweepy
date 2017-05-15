@@ -297,8 +297,11 @@ class API(object):
                     response = self.get_state_media(command='STATUS',
                                                     media_id=media_info.media_id)
 
-                    if response['processing_info'][
-                        'state'] != 'succeeded' and video_count < 5:
+                    if response['processing_info']['state'] == 'failed':
+                        media_info = json.dumps(response)
+                        break
+                    elif response['processing_info']['state'] != 'succeeded' \
+                            and video_count < 5:
                         check_after = response[
                             'processing_info']['check_after_secs']
                         time.sleep(check_after)
@@ -306,6 +309,8 @@ class API(object):
                     else:
                         media_info = json.dumps(response)
                         break
+            else:
+                media_info = response
 
             return media_info
         else:
