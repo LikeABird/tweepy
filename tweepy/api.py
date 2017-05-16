@@ -275,7 +275,7 @@ class API(object):
                 'post_data': post_data
             })
             # The FINALIZE command returns media information
-            response = bind_api(
+            upload_response = bind_api(
                 api=self,
                 path='/media/upload.json',
                 method='POST',
@@ -285,32 +285,32 @@ class API(object):
                 upload_api=True
             )(*args, **kwargs)
 
-            twitter_result = json.loads(response)
-            if twitter_result['processing_info']['state'] == 'pending':
-                check_after = twitter_result[
+            upload_response_dict = json.loads(upload_response)
+            if upload_response_dict['processing_info']['state'] == 'pending':
+                check_after = upload_response_dict[
                     'processing_info']['check_after_secs']
                 time.sleep(check_after)
 
                 # STATUS method to get the id when media is processed
                 video_count = 0
                 while True:
-                    response = self.get_state_media(command='STATUS',
+                    state_media = self.get_state_media(command='STATUS',
                                                     media_id=media_info.media_id)
 
-                    if response['processing_info']['state'] == 'failed':
-                        media_info = json.dumps(response)
+                    if state_media['processing_info']['state'] == 'failed':
+                        media_info = json.dumps(state_media)
                         break
-                    elif response['processing_info']['state'] != 'succeeded' \
+                    elif state_media['processing_info']['state'] != 'succeeded' \
                             and video_count < 5:
-                        check_after = response[
+                        check_after = state_media[
                             'processing_info']['check_after_secs']
                         time.sleep(check_after)
                         video_count += 1
                     else:
-                        media_info = json.dumps(response)
+                        media_info = json.dumps(state_media)
                         break
             else:
-                media_info = response
+                media_info = upload_response
 
             return media_info
         else:
