@@ -1499,7 +1499,7 @@ class API(object):
         if file_type is None:
             raise TweepError('Could not determine file type')
         file_type = file_type[0]
-        if file_type not in ['video/mp4']:
+        if file_type not in ['video/mp4', 'image/gif']:
             raise TweepError('Invalid file type for video: %s' % file_type)
 
         BOUNDARY = b'Tw3ePy'
