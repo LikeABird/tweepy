@@ -186,6 +186,9 @@ class API(object):
         media_ids = kwargs.pop("media_ids", None)
         if media_ids is not None:
             post_data["media_ids"] = list_to_csv(media_ids)
+        exclude_reply_user_ids = kwargs.pop("exclude_reply_user_ids", None)
+        if exclude_reply_user_ids is not None:
+            post_data["exclude_reply_user_ids"] = list_to_csv(exclude_reply_user_ids)
 
         return bind_api(
             api=self,
