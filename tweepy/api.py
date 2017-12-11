@@ -204,7 +204,8 @@ class API(object):
             :allowed_param:
         """
         f = kwargs.pop('file', None)
-        headers, post_data = API._pack_image(filename, 3072, form_field='media', f=f)
+        headers, post_data = API._pack_image(filename, 3072,
+                                             form_field='media', f=f)
         kwargs.update({'headers': headers, 'post_data': post_data})
 
         return bind_api(
@@ -517,6 +518,7 @@ class API(object):
         """ :reference: https://dev.twitter.com/rest/reference/get/direct_messages
             :allowed_param:'since_id', 'max_id', 'count'
         """
+
         return bind_api(
             api=self,
             path='/direct_messages.json',
@@ -565,11 +567,11 @@ class API(object):
             require_auth=True
         )
 
-    @property
-    def send_direct_message_media(self):
+    def send_direct_message_media(self, *args, **kwargs):
         """ :reference: https://dev.twitter.com/rest/reference/post/direct_messages/new
             :allowed_param:
         """
+
         return bind_api(
             api=self,
             path='/direct_messages/events/new.json',
@@ -577,7 +579,7 @@ class API(object):
             payload_type='json',
             allowed_param=['event'],
             require_auth=True
-        )
+        )(*args, **kwargs)
 
     @property
     def destroy_direct_message(self):
