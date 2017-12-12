@@ -227,7 +227,7 @@ class API(object):
         chunk_size = 2097152
         f = kwargs.pop('file', None)
         # Larger files are allowed to be uploaded asynchronously.
-        headers, post_data, fp = API._chunk_video('init', filename,
+        headers, post_data, fp = API._chunk_media('init', filename,
                                                   max_file_size,
                                                   form_field='media', f=f)
         kwargs.update({ 'headers': headers, 'post_data': post_data })
@@ -250,7 +250,7 @@ class API(object):
             nloops = int(fsize / chunk_size) + \
                      (1 if fsize % chunk_size > 0 else 0)
             for i in range(nloops):
-                headers, post_data, fp = API._chunk_video(
+                headers, post_data, fp = API._chunk_media(
                     'append', filename, max_file_size, chunk_size=chunk_size,
                     f=fp, media_id=media_info.media_id, segment_index=i
                 )
@@ -270,7 +270,7 @@ class API(object):
                     upload_api=True
                 )(*args, **kwargs)
             # When all chunks have been sent, we can finalize.
-            headers, post_data, fp = API._chunk_video('finalize', filename,
+            headers, post_data, fp = API._chunk_media('finalize', filename,
                                                       max_file_size,
                                                       media_id=
                                                       media_info.media_id)
@@ -290,6 +290,10 @@ class API(object):
             )(*args, **kwargs)
 
             upload_response_dict = json.loads(upload_response)
+
+            if not upload_response_dict.get('processing_info'):
+                return media_info
+
             if upload_response_dict['processing_info']['state'] == 'pending':
                 check_after = upload_response_dict[
                     'processing_info']['check_after_secs']
@@ -1487,7 +1491,7 @@ class API(object):
         return headers, body
 
     @staticmethod
-    def _chunk_video(command, filename, max_size, form_field="media", chunk_size=4096, f=None, media_id=None, segment_index=0):
+    def _chunk_media(command, filename, max_size, form_field="media", chunk_size=4096, f=None, media_id=None, segment_index=0):
         fp = None
         if command == 'init':
             if f is None:
@@ -1518,7 +1522,8 @@ class API(object):
         if file_type is None:
             raise TweepError('Could not determine file type')
         file_type = file_type[0]
-        if file_type not in ['video/mp4', 'image/gif']:
+        if file_type not in ['video/mp4', 'image/gif', 'image/png',
+                             'image/jpeg']:
             raise TweepError('Invalid file type for video: %s' % file_type)
 
         BOUNDARY = b'Tw3ePy'
