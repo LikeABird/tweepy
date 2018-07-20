@@ -173,7 +173,7 @@ class API(object):
         """
         return bind_api(
             api=self,
-            path='/statuses/show.json',
+            path='/statuses/show.json?tweet_mode=extended',
             payload_type='status',
             allowed_param=['id']
         )
