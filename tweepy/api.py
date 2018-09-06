@@ -557,21 +557,7 @@ class API(object):
             require_auth=True
         )
 
-    @property
-    def send_direct_message(self):
-        """ :reference: https://api.twitter.com/1.1/direct_messages/events/new.json
-            :allowed_param:'user', 'screen_name', 'user_id', 'text'
-        """
-        return bind_api(
-            api=self,
-            path='/direct_messages/new.json',
-            method='POST',
-            payload_type='direct_message',
-            allowed_param=['user', 'screen_name', 'user_id', 'text'],
-            require_auth=True
-        )
-
-    def send_direct_message_media(self, *args, **kwargs):
+    def send_direct_message(self, *args, **kwargs):
         """ :reference: https://dev.twitter.com/rest/reference/post/direct_messages/new
             :allowed_param:
         """
