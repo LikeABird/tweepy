@@ -1516,11 +1516,11 @@ class API(object):
         body = list()
         if command == 'init':
             body.append(
-                urllib.urlencode({
+                urllib.parse.urlencode({
                     'command': 'INIT',
                     'media_type': file_type,
                     'total_bytes': file_size
-                })
+                }).encode('utf-8')
             )
             headers = {
                 'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
@@ -1553,10 +1553,10 @@ class API(object):
             if media_id is None:
                 raise TweepError('Media ID is required for FINALIZE command.')
             body.append(
-                urllib.urlencode({
+                urllib.parse.urlencode({
                     'command': 'FINALIZE',
                     'media_id': media_id
-                })
+                }).encode('utf-8')
             )
             headers = {
                 'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
