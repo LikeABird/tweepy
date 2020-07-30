@@ -219,7 +219,8 @@ def bind_api(**config):
                 try:
                     error_msg = self.parser.parse_error(resp.text)
                 except Exception:
-                    error_msg = "Twitter error response: status code = %s" % resp.status_code
+                    error_msg = "Twitter error {} response: {}"\
+                                .format(resp.status_code, resp.text)
 
                 if is_rate_limit_error_message(error_msg):
                     raise RateLimitError(error_msg, resp)
