@@ -102,6 +102,8 @@ class Status(Model):
                     setattr(status, k, Place.parse(api, v))
                 else:
                     setattr(status, k, None)
+            elif k == 'timestamp_ms':
+                setattr(status, k, v)
             else:
                 setattr(status, k, v)
         return status
