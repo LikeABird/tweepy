@@ -337,9 +337,9 @@ class Stream(object):
         if resp.raw.closed:
             self.on_closed(resp)
 
-    def _start(self, async):
+    def _start(self, _async):
         self.running = True
-        if async:
+        if _async:
             self._thread = Thread(target=self._run)
             self._thread.start()
         else:
@@ -355,7 +355,7 @@ class Stream(object):
                    replies=None,
                    track=None,
                    locations=None,
-                   async=False,
+                   _async=False,
                    encoding='utf8'):
         self.session.params = {'delimited': 'length'}
         if self.running:
@@ -376,34 +376,34 @@ class Stream(object):
         if track:
             self.session.params['track'] = u','.join(track).encode(encoding)
 
-        self._start(async)
+        self._start(_async)
 
-    def firehose(self, count=None, async=False):
+    def firehose(self, count=None, _async=False):
         self.session.params = {'delimited': 'length'}
         if self.running:
             raise TweepError('Stream object already connected!')
         self.url = '/%s/statuses/firehose.json' % STREAM_VERSION
         if count:
             self.url += '&count=%s' % count
-        self._start(async)
+        self._start(_async)
 
-    def retweet(self, async=False):
+    def retweet(self, _async=False):
         self.session.params = {'delimited': 'length'}
         if self.running:
             raise TweepError('Stream object already connected!')
         self.url = '/%s/statuses/retweet.json' % STREAM_VERSION
-        self._start(async)
+        self._start(_async)
 
-    def sample(self, async=False, languages=None):
+    def sample(self, _async=False, languages=None):
         self.session.params = {'delimited': 'length'}
         if self.running:
             raise TweepError('Stream object already connected!')
         self.url = '/%s/statuses/sample.json' % STREAM_VERSION
         if languages:
             self.session.params['language'] = ','.join(map(str, languages))
-        self._start(async)
+        self._start(_async)
 
-    def filter(self, follow=None, track=None, async=False, locations=None,
+    def filter(self, follow=None, track=None, _async=False, locations=None,
                stall_warnings=False, languages=None, encoding='utf8', filter_level=None):
         self.body = {}
         self.session.headers['Content-type'] = "application/x-www-form-urlencoded"
@@ -427,10 +427,10 @@ class Stream(object):
             self.body['filter_level'] = unicode(filter_level, encoding)
         self.session.params = {'delimited': 'length'}
         self.host = 'stream.twitter.com'
-        self._start(async)
+        self._start(_async)
 
     def sitestream(self, follow, stall_warnings=False,
-                   with_='user', replies=False, async=False):
+                   with_='user', replies=False, _async=False):
         self.body = {}
         if self.running:
             raise TweepError('Stream object already connected!')
@@ -443,7 +443,7 @@ class Stream(object):
             self.body['with'] = with_
         if replies:
             self.body['replies'] = replies
-        self._start(async)
+        self._start(_async)
 
     def disconnect(self):
         if self.running is False:
